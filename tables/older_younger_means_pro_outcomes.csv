@@ -1,0 +1,5 @@
+"","variable","Younger than 35","Older than 35","difference","min","max"
+"1","Respondent was impatient",0.249,0.216,"0.033*",0,2
+"2","Respondent was hostile",0.126,0.122,"0.004",0,2
+"3","Respondent was suspicious",0.294,0.263,"0.031*",0,2
+"4","Respondent was uncooperative",0.175,0.158,"0.017*",0,2

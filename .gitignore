@@ -1,0 +1,16 @@
+# History files
+.Rhistory
+.Rapp.history
+
+# Session Data files
+.RData
+.DS_Store
+
+#directories
+/data_raw/*
+/data_clean/*
+/questionnaires/*
+.Rproj.user
+/old_code/*
+/graveyard/*
+
