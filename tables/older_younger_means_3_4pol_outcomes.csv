@@ -1,0 +1,12 @@
+"","variable","Younger than 35","Older than 35","difference","min","max"
+"1","Voted in last national election",0.64,0.854,"-0.214*",0,1
+"2","Trust in ruling party",1.554,1.709,"-0.154*",0,3
+"3","Trust in opposition parties",1.214,1.298,"-0.084*",0,3
+"4","Preference for democracy",0.748,0.779,"-0.031*",0,1
+"5","Interest in public affairs",1.801,1.91,"-0.109*",0,3
+"6","Attendance at community meetings",2.009,2.379,"-0.37*",0,4
+"7","Approval of president's performance",0.659,0.694,"-0.034*",0,1
+"8","Country's economic conditions",1.579,1.514,"0.065*",0,4
+"9","Government's handling of the economy",1.314,1.381,"-0.067*",0,3
+"10","Knows MP's name",0.407,0.423,"-0.015*",0,1
+"11","Exposure to vote buying",0.416,0.387,"0.029*",0,3

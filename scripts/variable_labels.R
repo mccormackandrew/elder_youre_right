@@ -14,7 +14,13 @@ stat_outcomes <- c("ec_conditions_self", "notenoughfood", "noincome",
 pro_outcomes <- c("hostile", "uncooperative", 
                   "impatient", "suspicious")
 
-youth_outcomes <- c("youth_needs", "youth_employment", "youth_drugabuse", "youth_smoking")
+youth_outcomes <- c("youth_needs", 
+                    "youth_employment", 
+                    "youth_pregnancy",
+                    "youth_drugabuse", 
+                    "youth_alcohol",
+                    "youth_delinquency",
+                    "youth_smoking")
 
 all_outcomes <- c(eth_outcomes, pol_outcomes, stat_outcomes, pro_outcomes, youth_outcomes)
 
@@ -57,7 +63,10 @@ variable_labels <-
     # YOUTH OUTCOMES
     "Government's handling of addressing needs of youth",
     "Government's handling of youth employment",
+    "Government's handling teenage pregnancy",
     "Government's handling of drug abuse among youth",
+    "Government's handling of underage consumption of alcohol",
+    "Government's handling of youth delinquency",
     "Government's handling of smoking among youth")),
     
     var = c(# STAT OUTCOMES
@@ -95,7 +104,10 @@ variable_labels <-
             # YOUTH OUTCOMES
             "youth_needs", 
             "youth_employment", 
+            "youth_pregnancy",
             "youth_drugabuse", 
+            "youth_alcohol",
+            "youth_delinquency",
             "youth_smoking")) %>%
   mutate(group = case_when(var %in% eth_outcomes ~ "eth_outcomes",
                            var %in% pol_outcomes ~ "pol_outcomes",

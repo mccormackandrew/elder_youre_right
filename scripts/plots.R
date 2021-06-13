@@ -8,16 +8,15 @@ library(sysfonts)
 
 font_add_google("Roboto", "Roboto")
 showtext_auto()
-# library(extrafont)
-# 
-# #extrafont::font_import() # Run once
-# loadfonts()
-# Read in data ----
 
 source("scripts/variable_labels.R")
 age_diff_models <- readRDS("data_clean/age_diff_models.rds")
 
 # Clean up coefficient estimates df ----
+
+
+age_diff_models %>%
+  filter(grepl("youth", outcome_variable))
 
 age_diff_models <- age_diff_models %>%
   filter(!(term %in% c("coarsened_age_35", "coarsened_age_40"))) %>%
@@ -84,8 +83,6 @@ plotfun <- function(data) {
 
 # 10 year age difference plots ----
 
-
-  
 plot10yr <- lapply(unique(age_diff_models$group), function(x) {
   plot <- age_diff_models %>%
     filter(age_variable == "coarsened_age_10") %>%
@@ -107,7 +104,7 @@ plot10yr <- lapply(unique(age_diff_models$group), function(x) {
       scale_y_continuous(breaks = seq(-0.4, 0.4, 0.05))
   } else if (x == "youth_outcomes") {
     plot <- plot +
-      coord_flip(ylim = c(-0.2, 0.2)) +
+      coord_flip(ylim = c(-0.4, 0.4)) +
       scale_y_continuous(breaks = seq(-0.4, 0.4, 0.1))
   }
   return(plot)
@@ -154,7 +151,7 @@ plot35yr <- lapply(unique(age_diff_models$group), function(x) {
       scale_y_continuous(breaks = seq(-0.4, 0.4, 0.05))
   } else if (x == "youth_outcomes") {
     plot <- plot +
-      coord_flip(ylim = c(-0.4, 0.4)) +
+      coord_flip(ylim = c(-0.7, 0.7)) +
       scale_y_continuous(breaks = seq(-0.8, 0.8, 0.1))
   }
   return(plot)
@@ -184,17 +181,21 @@ plot40yr <- lapply(unique(age_diff_models$group), function(x) {
   if(x == "pol_outcomes") {
     plot <- plot +
       geom_vline(xintercept = 2.5, size = 0.3) +
-      scale_y_continuous(breaks = seq(-0.4, 0.4, 0.05)) +
+      scale_y_continuous(breaks = seq(-0.4, 0.4, 0.1)) +
       geom_vline(xintercept = 4.5, size = 0.3)  
   } else if (x == "stat_outcomes") {
     plot <- plot +
-      coord_flip(ylim = c(-0.2, 0.2)) +
-      scale_y_continuous(breaks = seq(-0.4, 0.4, 0.05)) +
+      coord_flip(ylim = c(-0.4, 0.4)) +
+      scale_y_continuous(breaks = seq(-0.4, 0.4, 0.1)) +
       geom_vline(xintercept = 1.5, size = 0.3) 
   } else if (x == "pro_outcomes") {
     plot <- plot +
-      coord_flip(ylim = c(-0.2, 0.2)) +
-      scale_y_continuous(breaks = seq(-0.4, 0.4, 0.05))
+      coord_flip(ylim = c(-0.4, 0.4)) +
+      scale_y_continuous(breaks = seq(-0.4, 0.4, 0.1))
+  } else if (x == "youth_outcomes") {
+    plot <- plot +
+      coord_flip(ylim = c(-0.4, 0.4)) +
+      scale_y_continuous(breaks = seq(-0.4, 0.4, 0.1))
   }
   return(plot)
 }) %>%
@@ -219,7 +220,4 @@ age_diff_models %>%
   dplyr::select(term, label, estimate, std.error, upper, lower) %>%
   mutate_if(is.numeric, list(~round(., 4))) %>%
   write.csv("tables/effects_original_scales.csv")
-
-
-table(afpr$round)
 

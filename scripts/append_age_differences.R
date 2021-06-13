@@ -137,7 +137,6 @@ afpr_ages$trust_opposition <- ifelse(afpr_ages$trust_opposition == 7, NA, afpr_a
 
 # TRIBE ----
 # Remove invalid tribes
-
 afpr_ages <- afpr_ages %>%
   filter(!grepl("doesn’t think of self in those terms", tribe, ignore.case = TRUE)) %>%
   filter(tribe %!in% c("Refused to answer", 
@@ -163,6 +162,14 @@ afpr_ages <- afpr_ages %>%
 
 afpr_ages <- afpr_ages %>%
   mutate(minority = ifelse(modal_tribe != tribe, 1, 0))
+
+# Noncoethnic dyad
+afpr_ages <- afpr_ages %>%
+  # Noncoeth is 1 when the respondent tribe doesn't match the interviewer tribe
+  mutate(noncoeth_r7 = ifelse(tribe == enumeth, 0, 1)) %>%
+  # If not round 7. we use Adida et al.'s original variable
+  mutate(noncoeth = ifelse(is.na(noncoeth), noncoeth_r7, noncoeth))
+
 
 # SAVE .rds FILE OF DATA ----
 dir.create("./data_clean/", showWarnings = FALSE)
