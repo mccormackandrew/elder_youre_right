@@ -19,6 +19,7 @@ age_diff_models %>%
   filter(grepl("youth", outcome_variable))
 
 age_diff_models <- age_diff_models %>%
+  filter(country == "All") %>%
   filter(!(term %in% c("coarsened_age_35", "coarsened_age_40"))) %>%
   # Clean up coefficient estimate names
   mutate(term = 
@@ -134,6 +135,7 @@ map2(names(plot10yr_align), c(5, 8, 5, 3.5, 5), function(x, y) {
 
 plot35yr <- lapply(unique(age_diff_models$group), function(x) {
   plot <- age_diff_models %>%
+    filter(country == "All") %>%
     filter(age_variable == "coarsened_age_35") %>%
     filter(group == x) %>%
     plotfun()
@@ -163,7 +165,7 @@ plot35yr_align <- align_plots(plotlist = plot35yr,
                               axis = "tblr") %>%
   lapply(ggdraw) 
 
-map2(names(plot35yr_align), c(5, 8, 5, 3.5, 5), function(x, y) {
+map2(names(plot35yr_align), c(5, 8, 5, 5, 5), function(x, y) {
   save_plot(paste0("figs/", x, "35yr.png"),
             plot35yr_align[[x]],
             base_width = 7,

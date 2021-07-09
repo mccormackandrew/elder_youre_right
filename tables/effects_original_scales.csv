@@ -83,12 +83,12 @@
 "82","Interviewer 35 and under (relative to both over 35)","Ethnic group is treated unfairly",0.0676,0.024,0.1146,0.0205
 "83","Interviewer over 35 (relative to both 35 and under)","Ethnic group is treated unfairly",-0.1131,0.0245,-0.065,-0.1612
 "84","Non-coethnic interviewer","Ethnic group is treated unfairly",-0.1054,0.0149,-0.0762,-0.1347
-"85","Interviewer 35 and under (relative to both over 35)","Government's handling of addressing needs of youth",-0.0392,0.0215,0.0029,-0.0812
-"86","Interviewer over 35 (relative to both 35 and under)","Government's handling of addressing needs of youth",-0.0071,0.0211,0.0342,-0.0484
-"87","Non-coethnic interviewer","Government's handling of addressing needs of youth",0.0105,0.0161,0.042,-0.0211
-"88","Interviewer 35 and under (relative to both over 35)","Government's handling of youth employment",-0.2768,0.0707,-0.1382,-0.4155
-"89","Interviewer over 35 (relative to both 35 and under)","Government's handling of youth employment",0.1579,0.0891,0.3326,-0.0168
-"90","Non-coethnic interviewer","Government's handling of youth employment",-0.0488,0.0531,0.0553,-0.1529
+"85","Interviewer 35 and under (relative to both over 35)","Government's handling of addressing needs of youth",-0.0389,0.0215,0.0032,-0.081
+"86","Interviewer over 35 (relative to both 35 and under)","Government's handling of addressing needs of youth",-0.0075,0.0211,0.0338,-0.0489
+"87","Non-coethnic interviewer","Government's handling of addressing needs of youth",0.0131,0.0164,0.0453,-0.019
+"88","Interviewer 35 and under (relative to both over 35)","Government's handling of youth employment",-0.2509,0.0711,-0.1115,-0.3902
+"89","Interviewer over 35 (relative to both 35 and under)","Government's handling of youth employment",0.2335,0.105,0.4394,0.0276
+"90","Non-coethnic interviewer","Government's handling of youth employment",-0.0658,0.0658,0.0631,-0.1947
 "91","Interviewer 35 and under (relative to both over 35)","Government's handling teenage pregnancy",-0.2514,0.0787,-0.0972,-0.4057
 "92","Interviewer over 35 (relative to both 35 and under)","Government's handling teenage pregnancy",0.1671,0.1035,0.37,-0.0358
 "93","Non-coethnic interviewer","Government's handling teenage pregnancy",-0.0314,0.075,0.1156,-0.1784

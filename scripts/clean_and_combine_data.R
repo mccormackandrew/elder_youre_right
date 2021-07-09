@@ -25,6 +25,7 @@ label_to_vec <- function(data_set) {
 
 # Import round 4 and 5 Afrobarometer data ----
 afpr <- read_dta("data_raw/AFPR_data.dta")
+
 afpr$int_id <- afpr$q110
 
 # Import merged AB round 7 data ----
@@ -43,16 +44,8 @@ ab7 <- ab7 %>%
 # Import Mauritius AB round 7 data ----
 ab7_mauritius <- read_sav("data_raw/mau_r7_data_eng.sav")
 
-
-
 label_to_vec(ab7_mauritius) %>%
   write.csv("data_clean/ab7_mauritius_variables.csv")
-
-# Import Uganda AB round 7 data ----
-ab7_uganda <- read_sav("data_raw/uga_r7_data.sav")
-
-label_to_vec(ab7_uganda) %>%
-  write.csv("data_clean/ab7_uganda_variables.csv")
 
 # MATCHING MAIN OUTCOME AND CONTROL VARIABLES IN AB7 TO THOSE IN AFPR ----
 
@@ -103,38 +96,29 @@ variable_vector <- c(Q10B = "crime",
 # Rename variables to match afpr ----
 names(ab7) <- dplyr::recode(names(ab7), !!!variable_vector)
 names(ab7_mauritius) <- dplyr::recode(names(ab7_mauritius), !!!variable_vector)
-names(ab7_uganda) <- dplyr::recode(names(ab7_uganda), !!!variable_vector)
 
 
 
 # CONVERT REGION, COUNTRY, RESPONDENT TRIBE AND INTERVIEWER TRIBE TO CHARACTER ----
 ab7$country <- as.character(as_factor(ab7$country))
 ab7_mauritius$country <- "Mauritius"
-ab7_uganda$country <- "Uganda"
 
 ab7$region <- remove_attributes(to_character(ab7$region), "label")
-
 ab7_mauritius$region <- remove_attributes(to_character(ab7_mauritius$region), "label")
-
-ab7_uganda$region <- remove_attributes(to_character(ab7_uganda$region), "label")
 
 ab7$tribe <- remove_attributes(to_character(ab7$tribe), "label")
 ab7_mauritius$tribe <- remove_attributes(to_character(ab7_mauritius$tribe), "label")
-ab7_uganda$tribe <- remove_attributes(to_character(ab7_uganda$tribe), "label")
 
 ab7$enumeth <- remove_attributes(to_character(ab7$enumeth), "label")
 ab7_mauritius$enumeth <- remove_attributes(to_character(ab7_mauritius$enumeth), "label")
-ab7_uganda$enumeth <- remove_attributes(to_character(ab7_uganda$enumeth), "label")
 
-# KEEP ONLY THE VARIABLE WE NEED ----
+# KEEP ONLY THE VARIABLES WE NEED ----
 ab7 <- dplyr::select(ab7, one_of(variable_vector))
 ab7_mauritius <- dplyr::select(ab7_mauritius, one_of(variable_vector))
-ab7_uganda <- dplyr::select(ab7_uganda, one_of(variable_vector))
 
 # COMBINE ALL AB7 DATA ----
-# This includes ab7 (excluding Mauritius and Ugana), Mauritius ab7 and Uganda ab7
-ab7_full <- bind_rows(ab7, ab7_uganda) %>%
-  bind_rows(ab7_mauritius)
+# This includes ab7 (excluding Mauritius), and Mauritius ab7 
+ab7_full <- bind_rows(ab7, ab7_mauritius) 
 
 # Remove North Africa
 ab7_full <- ab7_full %>%
@@ -249,3 +233,7 @@ afpr$age <- as.numeric(afpr$age)
 afpr$age <- ifelse(afpr$age %in% c(998, 999), NA, afpr$age)
 
 write_rds(afpr, "data_clean/afpr_append.rds")
+
+
+
+

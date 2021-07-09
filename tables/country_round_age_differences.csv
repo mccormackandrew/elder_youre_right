@@ -1,0 +1,57 @@
+country,round,Both older (age 35 cutoff),Interviewer younger (age 35 cutoff),Both younger (age 35 cutoff),Interviewer older (age 35 cutoff)
+Benin,3,114,421,552,107
+Ghana,3,66,544,490,68
+Kenya,3,28,487,702,48
+Malawi,3,0,390,736,0
+Mali,3,144,531,358,102
+Mozambique,3,109,350,550,104
+Namibia,3,0,409,700,0
+Nigeria,3,0,560,1581,0
+Senegal,3,124,458,483,112
+South Africa,3,556,634,584,439
+Uganda,3,0,745,1593,0
+Zambia,3,0,400,795,0
+Benin,4,18,424,603,26
+Burkina Faso,4,37,440,626,25
+Ghana,4,43,419,423,27
+Kenya,4,117,318,489,144
+Malawi,4,78,367,575,114
+Mali,4,203,453,398,158
+Mozambique,4,0,204,477,0
+Namibia,4,30,430,659,40
+Nigeria,4,0,558,1518,0
+Senegal,4,158,468,428,114
+South Africa,4,463,553,650,385
+Uganda,4,0,800,1540,0
+Zambia,4,3,427,714,9
+Zimbabwe,4,23,442,636,31
+Benin,7,84,409,600,105
+Botswana,7,23,535,553,24
+Burkina Faso,7,49,510,590,50
+Cabo Verde,7,32,128,150,32
+Cameroon,7,13,396,738,39
+Côte d'Ivoire,7,184,320,422,234
+eSwatini,7,0,4,6,0
+Gabon,7,0,439,752,0
+Gambia,7,42,464,656,34
+Ghana,7,223,877,1048,240
+Guinea,7,221,412,382,175
+Kenya,7,150,515,746,181
+Lesotho,7,80,603,441,68
+Liberia,7,23,428,711,37
+Madagascar,7,171,478,412,133
+Malawi,7,106,385,542,161
+Mali,7,337,299,264,300
+Mauritius,7,464,340,142,204
+Mozambique,7,3,792,1525,7
+Namibia,7,149,335,504,209
+Niger,7,265,315,341,277
+Nigeria,7,69,432,994,102
+São Tomé and Príncipe,7,43,134,146,47
+Senegal,7,51,496,594,56
+Sierra Leone,7,63,440,584,89
+South Africa,7,198,680,688,236
+Tanzania,7,123,999,1094,87
+Togo,7,0,504,694,0
+Zambia,7,94,403,521,180
+Zimbabwe,7,145,434,459,154

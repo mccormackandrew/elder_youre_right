@@ -164,4 +164,41 @@ balance_table_7 <- means_table_7 %>%
   dplyr::select(-p_older, -p_younger)
 
 # Write balance table as CSV to be imported into MICROSOFT WORD ----
-write.csv(as.data.frame(balance_table), "tables/balance_table_round_7.csv")
+write.csv(as.data.frame(balance_table_7), "tables/balance_table_round_7.csv")
+
+# Balance table for Mauritius Round 7 ----
+
+statistical_tests_7_mauritius <- map(demographic_groups, function(x) {
+  if(x == "age") {
+    t_test_group_fun(x, data = afpr[afpr$round %in% 7 & afpr$country == "Mauritius", ])
+  } else {
+    ranksum_group_fun(x, data = afpr[afpr$round %in% 7 & afpr$country == "Mauritius", ])
+  }
+}) %>%
+  do.call("rbind", .) 
+
+means_7_mauritius <- map(demographic_groups, ~mean_group_fun(., data = afpr[afpr$round %in% 7 & afpr$country == "Mauritius", ])) %>%
+  do.call("rbind", .)
+
+# Calculate mean differences
+means_table_7_mauritius <- means_7_mauritius %>%
+  `colnames<-`(trimws(gsub("\\(|\\)|\\`|\\`|age 35 cutoff", "", colnames(.)))) %>%
+  mutate(difference_older = `Both older` - `Interviewer younger`,
+         differnece_younger = `Both younger` - `Interviewer older`) %>%
+  dplyr::select(Variable, 
+                `Both older`, `Interviewer younger`, difference_older,
+                `Both younger`, `Interviewer older`, differnece_younger)
+
+# Format means table to have significance stars if p < 0.05
+balance_table_7_mauritius <- means_table_7_mauritius %>%
+  left_join(statistical_tests_7_mauritius) %>%
+  mutate_at(vars(-one_of("Variable", "p_older", "p_younger", "difference_older", "differnece_younger")), list(~round(., 3))) %>%
+  mutate_at(vars(one_of("difference_older", "differnece_younger")), list(~round(., 2))) %>%
+  mutate(difference_older = case_when(p_older >= .05 ~ as.character(difference_older),
+                                      p_older < 0.05 ~ paste0(difference_older, "*")),
+         differnece_younger = case_when(p_younger >= .05 ~ as.character(differnece_younger),
+                                        p_younger < .05 ~ paste0(differnece_younger, "*"))) %>%
+  dplyr::select(-p_older, -p_younger)
+
+# Write balance table as CSV to be imported into MICROSOFT WORD ----
+write.csv(as.data.frame(balance_table_7_mauritius), "tables/balance_table_round_7_mauritius.csv")
