@@ -3,8 +3,6 @@ library(labelled)
 library(tidyverse)
 source("scripts/variable_labels.R")
 
-
-
 # "Not in" convenience operator
 '%!in%' <- function(x,y)!('%in%'(x,y))
 
@@ -25,8 +23,15 @@ label_to_vec <- function(data_set) {
 
 # Import round 4 and 5 Afrobarometer data ----
 afpr <- read_dta("data_raw/AFPR_data.dta")
-
 afpr$int_id <- afpr$q110
+
+# Investiage missing noncoeth and minority
+afpr %>%
+  filter(is.na(noncoeth) | is.na(minority)) %>%
+  select(tribe, enumeth) 
+
+# All missing noncoeth and minority in round 3 and 4 are because
+# either respondent or interviewer tribe are missing
 
 # Import merged AB round 7 data ----
 ab7 <- read_sav("data_raw/r7_merged_data_34ctry.release.sav") 
@@ -46,6 +51,12 @@ ab7_mauritius <- read_sav("data_raw/mau_r7_data_eng.sav")
 
 label_to_vec(ab7_mauritius) %>%
   write.csv("data_clean/ab7_mauritius_variables.csv")
+
+# Import Uganda AB round 7 data ----
+ab7_uganda <- read_sav("data_raw/uga_r7_data.sav")
+
+label_to_vec(ab7_uganda) %>%
+  write.csv("data_clean/ab7_uganda_variables.csv")
 
 # MATCHING MAIN OUTCOME AND CONTROL VARIABLES IN AB7 TO THOSE IN AFPR ----
 
@@ -93,37 +104,40 @@ variable_vector <- c(Q10B = "crime",
                      Q97 = "edu")
 
 
-# Rename variables to match afpr ----
+# RENAME VARIABLES TO MATCH AFPR ----
 names(ab7) <- dplyr::recode(names(ab7), !!!variable_vector)
 names(ab7_mauritius) <- dplyr::recode(names(ab7_mauritius), !!!variable_vector)
-
-
+names(ab7_uganda) <- dplyr::recode(names(ab7_uganda), !!!variable_vector)
 
 # CONVERT REGION, COUNTRY, RESPONDENT TRIBE AND INTERVIEWER TRIBE TO CHARACTER ----
 ab7$country <- as.character(as_factor(ab7$country))
 ab7_mauritius$country <- "Mauritius"
+ab7_uganda$country <- "Uganda"
 
 ab7$region <- remove_attributes(to_character(ab7$region), "label")
 ab7_mauritius$region <- remove_attributes(to_character(ab7_mauritius$region), "label")
+ab7_uganda$region <- remove_attributes(to_character(ab7_uganda$region), "label")
 
 ab7$tribe <- remove_attributes(to_character(ab7$tribe), "label")
 ab7_mauritius$tribe <- remove_attributes(to_character(ab7_mauritius$tribe), "label")
+ab7_uganda$tribe <- remove_attributes(to_character(ab7_uganda$tribe), "label")
 
 ab7$enumeth <- remove_attributes(to_character(ab7$enumeth), "label")
 ab7_mauritius$enumeth <- remove_attributes(to_character(ab7_mauritius$enumeth), "label")
+ab7_uganda$enumeth <- remove_attributes(to_character(ab7_uganda$enumeth), "label")
 
 # KEEP ONLY THE VARIABLES WE NEED ----
 ab7 <- dplyr::select(ab7, one_of(variable_vector))
 ab7_mauritius <- dplyr::select(ab7_mauritius, one_of(variable_vector))
+ab7_uganda <- dplyr::select(ab7_uganda, one_of(variable_vector))
 
 # COMBINE ALL AB7 DATA ----
 # This includes ab7 (excluding Mauritius), and Mauritius ab7 
-ab7_full <- bind_rows(ab7, ab7_mauritius) 
+ab7_full <- bind_rows(ab7, ab7_mauritius, ab7_uganda) 
 
 # Remove North Africa
 ab7_full <- ab7_full %>%
   filter(country %!in% c("Morocco", "Tunisia", "Sudan"))
-
 
 ab7_full <- ab7_full %>%
   mutate(
@@ -194,11 +208,8 @@ ab7_full <- ab7_full %>%
                             region == "matabeleland south" ~ "matebeleland south",
                             TRUE ~ region))
 
-
 afpr$tribe <- remove_attributes(to_character(afpr$tribe), "label")
-
 afpr$country <- remove_attributes(to_character(afpr$country), "label")
-
 ab7_full$country <- remove_attributes(to_character(ab7_full$country), "label")
 
 
@@ -232,8 +243,51 @@ afpr <- afpr %>%
 afpr$age <- as.numeric(afpr$age)
 afpr$age <- ifelse(afpr$age %in% c(998, 999), NA, afpr$age)
 
+# FIX MISSING VALUES IN trust_opposition ----
+# Not clear from codebook what 7 represents in trust opposition
+# But relatively small number of cases suggests
+# these are missing values
+afpr$trust_opposition <- ifelse(afpr$trust_opposition == 7, NA, afpr$trust_opposition)
+
+# TRIBE ----
+# Remove invalid tribes
+afpr <- afpr %>%
+  filter(!grepl("doesn’t think of self in those terms", tribe, ignore.case = TRUE)) %>%
+  filter(tribe %!in% c("Refused to answer",
+                       "Don't know",
+                       "Don’t know",
+                       "Not asked in the country")) %>%
+  filter(!grepl("^Related to", tribe)) %>%
+  filter(!is.na(tribe))
+
+# 8343 cases removed from tribe
+
+# Function to calculate modal value in a character vector
+calculate_mode <- function(x) {
+  uniqx <- unique(na.omit(x))
+  uniqx[which.max(tabulate(match(x, uniqx)))]
+}
+
+afpr <- afpr %>%
+  group_by(country, region, round) %>%
+  summarise(modal_tribe = calculate_mode(tribe)) %>%
+  right_join(afpr, by = c("country", "region", "round")) %>%
+  ungroup()
+
+afpr <- afpr %>%
+  mutate(minority_new = ifelse(modal_tribe != tribe, 1, 0)) %>%
+  # Keep Adida et al.'s minority variable for rounds 3 and 4
+  # Use newly constructed version (constructed with same procedure as Adida et al.)
+  # for round 7
+  mutate(minority = ifelse(is.na(minority), minority_new, minority))
+
+# Noncoethnic dyads ----
+afpr <- afpr %>%
+  # Noncoeth is 1 when the respondent tribe doesn't match the interviewer tribe
+  mutate(noncoeth_r7 = ifelse(tribe == enumeth, 0, 1)) %>%
+  # Keep Adida et al.'s noncoethnic variable for rounds 3 and 4
+  # Use newly constructed version (constructed with same procedure as Adida et al.)
+  # for round 7
+  mutate(noncoeth = ifelse(is.na(noncoeth), noncoeth_r7, noncoeth))
+
 write_rds(afpr, "data_clean/afpr_append.rds")
-
-
-
-

@@ -80,7 +80,6 @@ afpr_ages$age_difference <- time_length(interval(afpr_ages$int_bday,
                                         unit = "year")
 
 # GENERATE COARSENED AGE DIFFERENCES ----
-
 afpr_ages <- afpr_ages %>%
   mutate(coarsened_age_10 = 
            case_when(age_difference < -10 ~ "Interviewer younger (10 year)",
@@ -127,48 +126,6 @@ afpr_ages <- afpr_ages %>%
                                         "Interviewer younger (age 40 cutoff)",
                                         "Both younger (age 40 cutoff)",
                                         "Interviewer older (age 40 cutoff)"))
-
-
-
-# Not clear from codebook what 7 represents 
-# But relatively small number of cases suggests
-# these are missing values
-afpr_ages$trust_opposition <- ifelse(afpr_ages$trust_opposition == 7, NA, afpr_ages$trust_opposition)
-
-# TRIBE ----
-# Remove invalid tribes
-afpr_ages <- afpr_ages %>%
-  filter(!grepl("doesn’t think of self in those terms", tribe, ignore.case = TRUE)) %>%
-  filter(tribe %!in% c("Refused to answer", 
-                       "Don't know", 
-                       "Don’t know",
-                       "Not asked in the country")) %>%
-  filter(!grepl("^Related to", tribe)) %>%
-  filter(!is.na(tribe))
-
-# 8343 cases removed from tribe
-
-# Function to calculate modal value in a character vector
-calculate_mode <- function(x) {
-  uniqx <- unique(na.omit(x))
-  uniqx[which.max(tabulate(match(x, uniqx)))]
-}
-
-afpr_ages <- afpr_ages %>%
-  group_by(country, round) %>%
-  summarise(modal_tribe = calculate_mode(tribe)) %>%
-  right_join(afpr_ages, by = c("country", "round")) %>%
-  ungroup()
-
-afpr_ages <- afpr_ages %>%
-  mutate(minority = ifelse(modal_tribe != tribe, 1, 0))
-
-# Noncoethnic dyad
-afpr_ages <- afpr_ages %>%
-  # Noncoeth is 1 when the respondent tribe doesn't match the interviewer tribe
-  mutate(noncoeth_r7 = ifelse(tribe == enumeth, 0, 1)) %>%
-  # If not round 7. we use Adida et al.'s original variable
-  mutate(noncoeth = ifelse(is.na(noncoeth), noncoeth_r7, noncoeth))
 
 
 # SAVE .rds FILE OF DATA ----

@@ -11,11 +11,10 @@ library(ggtext)
 afpr <- readRDS("data_clean/afpr_ages.rds")
 source("scripts/variable_labels.R")
 
-
 # Function to convert Stata labelled variables to character
 l2f <- function(x) as.character(haven::as_factor(x))
 
-# TABLE 2: Descriptive statistics on the age of interviewers and respondents. ----
+# TABLE XX: Descriptive statistics on the age of interviewers and respondents. ----
 
 ages_df <- map_dfr(c("All", 3, 4, 7), function(x) {
   
@@ -70,22 +69,7 @@ ages_df <- ages_df %>%
 
 write.csv(ages_df, "tables/age_difference_distributions.csv")
 
-# kable(ages_df, format = "latex", booktabs = TRUE, 
-#       col.names = c("AB round", 
-#                     "Mean", "SD", "N",
-#                     "Mean", "SD", "N",
-#                     "Mean", "SD", "N")) %>%
-#   add_header_above(c(" ", 
-#                      "Respondent age" = 3, 
-#                      "Interviewer age" = 3,
-#                      "Age difference" = 3)) %>%
-#   row_spec(3, extra_latex_after = "\\cline{2-10} \\\\[-5pt]") %>%
-#   writeLines("tables/age_difference_distributions.tex")
-  
-
-
-
-# Figure 1: Descriptive plots of our four age group categories. ----
+# Figure XX: Descriptive plots of our four age group categories. ----
 
 coarsened_35_desc_rounds <- afpr %>%
   dplyr::select(coarsened_age_35, round) %>%
@@ -133,13 +117,14 @@ coarsened_35_desc %>%
                 hjust = 0, size = 3) +
   #ggtitle("Distribution of age differences") +
   ylim(0, 120) +
-  coord_flip() +
-  ggsave("figs/descriptives_age_coarsened_35_plot.png", width = 8, height = 2)
+  coord_flip() 
 
-# Figure XX: Descriptive plots of our four age group categories for Uganda and Mauritius ----
+ggsave("figs/descriptives_age_coarsened_35_plot.png", width = 8, height = 2)
+
+# Figure XX: Descriptive plots of our four age group categories Round 7 and Mauritius ----
 
 coarsened_35_round_7 <- 
-  map_dfr(c("Mauritius", "All Round 7"), function(x) {
+  map_dfr(c("Mauritius", "Uganda", "All Round 7"), function(x) {
     
     if(x != "All Round 7") {
       afpr <- afpr %>%
@@ -165,7 +150,6 @@ coarsened_35_round_7 <- coarsened_35_round_7 %>%
                                       coarsened_age_35 == "Both older" ~ "Both over 35",
                                       TRUE ~ coarsened_age_35))
 
-
 coarsened_35_round_7 %>%
   mutate(coarsened_age_35 = str_wrap(coarsened_age_35, 30)) %>%
   ggplot(aes(coarsened_age_35, percent)) +
@@ -183,15 +167,12 @@ coarsened_35_round_7 %>%
                 hjust = 0, size = 3) +
   #ggtitle("Distribution of age differences") +
   ylim(0, 120) +
-  coord_flip() +
-  ggsave("figs/descriptives_age_coarsened_35_plot_round_7.png", width = 8, height = 2)
+  coord_flip() 
+
+ggsave("figs/descriptives_age_coarsened_35_plot_round_7.png", width = 8, height = 2)
 
 
-# Tables 4 and 5: Mean differences between younger and older respondents for outcomes ----
-
-################################
-## AFROBAROMETER DESCRIPTIVES ##
-################################
+# Tables XX: Mean differences between younger and older respondents (Rounds 3 and 4) ----
 
 afpr <- afpr %>%
   mutate(younger_older = ifelse(age <= 35, "Younger than 35", "Older than 35")) %>%
@@ -207,8 +188,6 @@ conditional_rescale <- function(x) {
 afpr <- afpr %>%
   mutate_at(vars(one_of(all_outcomes)),
             conditional_rescale)
-
-# ROUND 3 and 4
 
 # Determine whether variables are binary or ordinal
 variable_type_3_4 <- afpr[ , c(pro_outcomes, pol_outcomes, stat_outcomes, eth_outcomes)] %>%
@@ -275,7 +254,7 @@ map(c("stat_outcomes","pol_outcomes","eth_outcomes","pro_outcomes"), function(x)
     write.csv(., file = paste0("tables/older_younger_means_3_4", x, ".csv"))
 })
 
-# ROUND 7 ====
+# Tables XX: Mean differences between younger and older respondents (All round 7) ----
 
 # Determine whether variables are binary or ordinal
 variable_type_7 <- afpr[ , youth_outcomes] %>%
@@ -341,9 +320,8 @@ older_younger_desc_7 %>%
   write.csv(., file = paste0("tables/older_younger_means_7_youth_outcomes.csv"))
 
 
-# ROUND 7 (UGANDA AND MAURITIUS) ====
+# Tables XX: Mean differences between younger and older respondents (Mauritius and Uganda only) ----
 
-# Get p-value for difference of means
 
 uganda_mauritius <-
   expand.grid(outcome = youth_outcomes,
@@ -365,6 +343,8 @@ filter_uganda_mauritius_grid <- pmap_lgl(uganda_mauritius, function(outcome, cou
 
 uganda_mauritius <- uganda_mauritius[filter_uganda_mauritius_grid, ]
 
+
+# Get p-value for difference of means
 uganda_mauritius_descriptives <- pmap_dfr(uganda_mauritius, function(outcome, country) {
   
   afpr <- afpr[afpr$round %in% 7 & afpr$country == country, ]
@@ -415,7 +395,32 @@ uganda_mauritius_descriptives %>%
     write.csv(., file = paste0("tables/older_younger_means_7_youth_outcomes_uganda_maurituis.csv"))
 
 
-            
-            
-            
-            
+# Distribution of interviewer-respondent dyads by country and wave ----
+
+afpr %>%
+  group_by(round, country) %>%
+  count(coarsened_age_35) %>%
+  filter(!is.na(coarsened_age_35)) %>%
+  pivot_wider(names_from = coarsened_age_35, values_from = n) %>%
+  ungroup() %>%
+  # NA values mean there are zero respondents in that category
+  mutate(across(-one_of(c("country", "round")), ~ifelse(is.na(.), 0, .))) %>%
+  arrange(round, country) %>%
+  split(.$round) %>%
+  map(function(x) {
+    
+    total_row <- colSums(select(x, -country, -round)) %>%
+      stack() %>%
+      spread(ind, values) %>%
+      mutate(country = "Total", round = unique(x$round))
+    
+    x <- bind_rows(x, total_row)
+    
+    write_csv(x, paste0("tables/respondent_interviewer_dyad_counts_round", unique(x$round), ".csv"))
+    
+    })
+
+
+
+
+  
