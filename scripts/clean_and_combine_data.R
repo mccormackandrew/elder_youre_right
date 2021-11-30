@@ -36,6 +36,13 @@ afpr %>%
 # Import merged AB round 7 data ----
 ab7 <- read_sav("data_raw/r7_merged_data_34ctry.release.sav") 
 
+error("What's the matter with Mozambique")
+# Enumeth not available for Mozambique in round 3
+afpr %>%
+  filter(round == 3) %>%
+  filter(country == 12) %>%
+  pull(enumeth)
+
 # Get variable names and save as csv for easy look-up
 label_to_vec(ab7) %>%
   write.csv("data_clean/ab7_variables.csv")
@@ -221,6 +228,16 @@ ab7_full <- ab7_full %>%
 # the format of the ab7_full enumeth
 afpr$enumeth <- remove_attributes(to_character(afpr$enumeth), "label")
 
+ab7_full <- ab7_full %>%
+  mutate(tribe = case_when(country == "São Tomé and Príncipe" & tribe == "Africans" ~ "Africanos",
+                           country == "São Tomé and Príncipe" & tribe == "Doesn’t think of self in those terms" ~ "National identity",
+                           country == "Mauritius" & grepl("Mauritian only", tribe) ~ "Mauritian",
+                           TRUE ~ tribe)) %>%
+  mutate(enumeth = case_when(country == "São Tomé and Príncipe" & enumeth == "Africans" ~ "Africanos",
+                             country == "São Tomé and Príncipe" & grepl("National identity only", enumeth) ~ "National identity",
+                             country == "Mauritius" & grepl("Mauritian only", enumeth) ~ "Mauritian",
+                             TRUE ~ enumeth)) 
+
 # KEEP ONLY THE VARIABLES WE NEED ----
 afpr <- afpr %>%
   dplyr::select(# Covariates
@@ -251,14 +268,14 @@ afpr$trust_opposition <- ifelse(afpr$trust_opposition == 7, NA, afpr$trust_oppos
 
 # TRIBE ----
 # Remove invalid tribes
-afpr <- afpr %>%
-  filter(!grepl("doesn’t think of self in those terms", tribe, ignore.case = TRUE)) %>%
-  filter(tribe %!in% c("Refused to answer",
-                       "Don't know",
-                       "Don’t know",
-                       "Not asked in the country")) %>%
-  filter(!grepl("^Related to", tribe)) %>%
-  filter(!is.na(tribe))
+# afpr <- afpr %>%
+#   filter(!grepl("doesn’t think of self in those terms", tribe, ignore.case = TRUE)) %>%
+#   filter(tribe %!in% c("Refused to answer",
+#                        "Don't know",
+#                        "Don’t know",
+#                        "Not asked in the country")) %>%
+#   filter(!grepl("^Related to", tribe)) %>%
+#   filter(!is.na(tribe))
 
 # 8343 cases removed from tribe
 

@@ -124,7 +124,7 @@ ggsave("figs/descriptives_age_coarsened_35_plot.png", width = 8, height = 2)
 # Figure XX: Descriptive plots of our four age group categories Round 7 and Mauritius ----
 
 coarsened_35_round_7 <- 
-  map_dfr(c("Mauritius", "Uganda", "All Round 7"), function(x) {
+  map_dfr(c("Mauritius", "All Round 7"), function(x) {
     
     if(x != "All Round 7") {
       afpr <- afpr %>%
@@ -255,52 +255,36 @@ map(c("stat_outcomes","pol_outcomes","eth_outcomes","pro_outcomes"), function(x)
 })
 
 # Tables XX: Mean differences between younger and older respondents (All round 7) ----
+# It is just "youth_needs" that is in all Round 7
 
-# Determine whether variables are binary or ordinal
-variable_type_7 <- afpr[ , youth_outcomes] %>%
-  sapply(function(x) length(na.omit(unique(x))))
 
-variable_type_7 <- ifelse(variable_type_7 == 2, "binary", "ordinal")
+pval <- do(afpr[afpr$round %in% 7, ], 
+               broom::tidy(t.test(youth_needs ~ younger_older, data = .)))$p.value
 
-# Get p-value for difference of means
-older_younger_p_7 <- map2(names(variable_type_7), variable_type_7, function(x, y) {
-  
-  if(y == "binary") { # If binary, do a wilcoxon rank-sum test
-    pval <- do(afpr[afpr$round %in% 7, ], 
-               broom::tidy(wilcox.test(!!sym(x) ~ younger_older, data = .)))$p.value
-  } else { # If ordinal, do a t.test
-    pval <- do(afpr[afpr$round %in% 7, ], 
-               broom::tidy(t.test(!!sym(x) ~ younger_older, data = .)))$p.value
-  }
-  data.frame(variable = x, pval = pval)
-}) %>%
-  bind_rows() 
+older_younger_p_7 <- data.frame(variable = "youth_needs", pval = pval)
 
 # Construct table 
-older_younger_desc_7 <- map(names(variable_type_7), function(x) {
+older_younger_desc_7 <- 
   means <- afpr[afpr$round %in% 7, ] %>%
-    dplyr::select(younger_older, one_of(x)) %>%
-    na.omit() %>%
-    group_by(younger_older) %>%
-    dplyr::summarise(means = mean(!!sym(x), na.rm = TRUE)) %>%
-    spread(younger_older, means) %>%
-    mutate(difference = `Younger than 35` - `Older than 35`) %>%
-    mutate(variable = x) 
+  dplyr::select(younger_older, youth_needs) %>%
+  na.omit() %>%
+  group_by(younger_older) %>%
+  dplyr::summarise(means = mean(youth_needs, na.rm = TRUE)) %>%
+  spread(younger_older, means) %>%
+  mutate(difference = `Younger than 35` - `Older than 35`) %>%
+  mutate(variable = "youth_needs") %>%
+  select(variable, everything())
   
-  means$min <- range(afpr[[x]], na.rm = TRUE)[1]
-  means$max <- range(afpr[[x]], na.rm = TRUE)[2]
+older_younger_desc_7$min <- range(afpr[["youth_needs"]], na.rm = TRUE)[1]
+older_younger_desc_7$max <- range(afpr[["youth_needs"]], na.rm = TRUE)[2]
   
-  return(means)
-}) %>%
-  bind_rows() %>%
-  dplyr::select(variable, everything()) %>%
+  
+older_younger_desc_7 <- older_younger_desc_7 %>%
   # Join p-values from mean difference tests
   left_join(older_younger_p_7, by = "variable") %>%
   # Clean up variable labels
   mutate(variable = plyr::mapvalues(variable, variable_labels$var, 
                                     as.character(variable_labels$label))) %>%
-  # Add in variable grouping category
-  mutate(group = plyr::mapvalues(variable, variable_labels$label, variable_labels$group)) %>%
   # Round numbers
   mutate_if(is.numeric, list(~round(., 3))) %>%
   # Append a star * to the difference if it's significant
@@ -308,46 +292,16 @@ older_younger_desc_7 <- map(names(variable_type_7), function(x) {
   # Remove p-value column
   dplyr::select(-pval)
 
-# Make ordering of variables correct
-older_younger_desc_7$variable <- fct_rev(factor(older_younger_desc_7$variable, variable_labels$label))
-
-older_younger_desc_7 <- older_younger_desc_7 %>%
-  arrange(variable)
-
 older_younger_desc_7 %>%
-  filter(group == "youth_outcomes") %>%
-  dplyr::select(-group) %>%
   write.csv(., file = paste0("tables/older_younger_means_7_youth_outcomes.csv"))
 
 
-# Tables XX: Mean differences between younger and older respondents (Mauritius and Uganda only) ----
-
-
-uganda_mauritius <-
-  expand.grid(outcome = youth_outcomes,
-              country = c("Uganda", "Mauritius"),
-              stringsAsFactors = FALSE)
-
-# # Not all variables are in both countries, so filter out models that are not possible
-filter_uganda_mauritius_grid <- pmap_lgl(uganda_mauritius, function(outcome, country) {
-  
-  country_round_df <- afpr[afpr$round == 7 & afpr$country %in% country, ]
-
-  na_rows <- country_round_df %>%
-    filter(is.na(!!sym(outcome))) %>%
-    nrow()
-
-  !(na_rows == nrow(country_round_df))
-
-})
-
-uganda_mauritius <- uganda_mauritius[filter_uganda_mauritius_grid, ]
-
+# Tables XX: Mean differences between younger and older respondents (Mauritius only) ----
 
 # Get p-value for difference of means
-uganda_mauritius_descriptives <- pmap_dfr(uganda_mauritius, function(outcome, country) {
+mauritius_descriptives <- map_dfr(youth_outcomes, function(outcome) {
   
-  afpr <- afpr[afpr$round %in% 7 & afpr$country == country, ]
+  afpr <- afpr[afpr$round %in% 7 & afpr$country == "Mauritius", ]
   
   # Get significance
   pval <- do(afpr, 
@@ -369,7 +323,7 @@ uganda_mauritius_descriptives <- pmap_dfr(uganda_mauritius, function(outcome, co
   means$max <- range(afpr[[outcome]], na.rm = TRUE)[2]
   
   means %>%
-    mutate(country = country) %>%
+    mutate(country = "Mauritius") %>%
     select(country, variable, everything()) %>%
     left_join(pval, by = "variable") 
 }) %>%
@@ -386,18 +340,34 @@ uganda_mauritius_descriptives <- pmap_dfr(uganda_mauritius, function(outcome, co
 
 
 # Make ordering of variables correct
-uganda_mauritius_descriptives$variable <- fct_rev(factor(uganda_mauritius_descriptives$variable, variable_labels$label))
+mauritius_descriptives$variable <- fct_rev(factor(mauritius_descriptives$variable, variable_labels$label))
 
-older_younger_desc_7 <- older_younger_desc_7 %>%
+mauritius_descriptives <- mauritius_descriptives %>%
   arrange(variable)
 
 uganda_mauritius_descriptives %>%
-    write.csv(., file = paste0("tables/older_younger_means_7_youth_outcomes_uganda_maurituis.csv"))
-
+    write.csv(., file = paste0("tables/older_younger_means_7_youth_outcomes_maurituis.csv"))
 
 # Distribution of interviewer-respondent dyads by country and wave ----
 
+# Explanatory variables used in the models. If any of have NA values, those
+# respondents will not be used in the analysis
+
+model_vars <- c("coarsened_age_35", "noncoeth", "age", "gender", "edu", 
+  "urban", "minority", "round", "inhomelang", 
+  "region", "tribe", "enumeth")
+
+
+afpr$omit_respondent <- afpr %>%
+  select(one_of(model_vars)) %>%
+  apply(1, function(x) any(is.na(x)))
+
+
 afpr %>%
+  filter(country == "Mozambique") %>%
+  select(one_of(model_vars))
+
+age_differnce_count <- afpr %>%
   group_by(round, country) %>%
   count(coarsened_age_35) %>%
   filter(!is.na(coarsened_age_35)) %>%
@@ -405,11 +375,27 @@ afpr %>%
   ungroup() %>%
   # NA values mean there are zero respondents in that category
   mutate(across(-one_of(c("country", "round")), ~ifelse(is.na(.), 0, .))) %>%
-  arrange(round, country) %>%
+  arrange(round, country)
+
+total_n <- afpr %>%
+  group_by(round, country) %>%
+  count() %>%
+  rename(total_n = n)
+
+n_used <- afpr %>%
+  filter(!omit_respondent) %>%
+  group_by(round, country) %>%
+  count() %>%
+  rename(n_used = n)
+  
+  
+age_differnce_count %>%
+  left_join(total_n) %>%
+  left_join(n_used) %>%
   split(.$round) %>%
   map(function(x) {
     
-    total_row <- colSums(select(x, -country, -round)) %>%
+    total_row <- colSums(select(x, -country, -round), na.rm = TRUE) %>%
       stack() %>%
       spread(ind, values) %>%
       mutate(country = "Total", round = unique(x$round))

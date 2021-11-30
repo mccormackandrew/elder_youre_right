@@ -5,6 +5,8 @@ library(tidyverse)
 library(xtable)
 library(gridExtra)
 library(fastDummies)
+library(devtools)
+library(TOSTER)
 
 # Load data 
 afpr <- readRDS("./data_clean/afpr_ages.rds")
@@ -24,6 +26,8 @@ afpr <- afpr %>%
 afpr <- cbind(afpr, fastDummies::dummy_cols(afpr$education) %>%
                      `colnames<-`(gsub(".data_", "", colnames(.))))
 
+
+# %%%% BALANCE TABLES %%%% ----
 
 # Define function that outputs means and p-values for all age combination categories ----
 
@@ -202,3 +206,114 @@ balance_table_7_mauritius <- means_table_7_mauritius %>%
 
 # Write balance table as CSV to be imported into MICROSOFT WORD ----
 write.csv(as.data.frame(balance_table_7_mauritius), "tables/balance_table_round_7_mauritius.csv")
+
+
+
+# %%%% EQUIVALENCE TESTS %%%% ----
+
+equivalence_intervals <- function(data, var_name, level = 1,
+                                  group = "coarsened_age_35",
+                                  alpha = 0.05,
+                                  lower_equivalence_bound = -0.25,
+                                  upper_equivalence_bound = 0.25,
+                                  type = "prop") {
+  
+  if(type == "t") { # Relevant only for age
+    
+    tost_est <- dataTOSTtwo(data, var_name, group, alpha = alpha,
+                            low_eqbound = lower_equivalence_bound, 
+                            high_eqbound = upper_equivalence_bound)
+    std_dev <- sd(data[, var_name], na.rm = TRUE)
+    est <- as.numeric(diff(t(tost_est$desc$asDF[, c("m[2]", "m[1]")])))
+    lower <- as.numeric(tost_est$eqb$asDF["cil[raw]"])
+    upper <- as.numeric(tost_est$eqb$asDF["ciu[raw]"])
+    p_upper <- as.numeric(tost_est$tost$asDF["p[1]"])
+    p_lower <- as.numeric(tost_est$tost$asDF["p[2]"])
+    
+    } else {
+      
+      tost_est <- datatosttwoprop(data, var_name, level, group, alpha, 
+                                  low_eqbound = lower_equivalence_bound, 
+                                  high_eqbound = upper_equivalence_bound)
+      std_dev <- sd(data[, var_name] == level, na.rm = TRUE)
+      est <- as.numeric(diff(t(tost_est$desc$asDF[, c("prop[2]", "prop[1]")])))
+      lower <- as.numeric(tost_est$eqb$asDF["cil"])
+      upper <- as.numeric(tost_est$eqb$asDF["ciu"])
+      p_upper <- as.numeric(tost_est$tost$asDF["p[1]"])
+      p_lower <- as.numeric(tost_est$tost$asDF["p[2]"])
+    
+    }
+  
+  out <- data.frame(est = est, lower = lower, upper = upper,
+                    std_dev = std_dev, est_sd = est / std_dev,
+                    lower_sd = lower / std_dev, upper_sd = upper / std_dev,
+                    p_upper = p_upper, p_lower = p_lower)
+  row.names(out) <- 1:nrow(out)
+  
+  return(out)
+  
+}
+
+
+
+
+equivalence_tests <- expand_grid(demo_var = demographic_groups,
+            age_group = c("younger", "older")) %>%
+  pmap_dfr(function(demo_var, age_group) {
+    
+    if(demo_var == "age") type <- "t" else type <- "prop"
+    
+    # Filter the data by young and old to assess age-diff 
+    # balance within the two groups
+    if(age_group == "older") { # Older respondents subset
+      afpr <- filter(afpr, coarsened_age_35 %in% 
+               c("Both older (age 35 cutoff)", 
+                 "Interviewer younger (age 35 cutoff)"))
+    } else { # Younger respondents subset
+      afpr <- filter(afpr, coarsened_age_35 %in% 
+                       c("Both younger (age 35 cutoff)", 
+                         "Interviewer older (age 35 cutoff)"))
+    }
+    
+    # Estimate equivalence interval
+    equivalence_intervals(data = afpr, 
+                          var_name = demo_var,
+                          group = "coarsened_age_35",
+                          lower_equivalence_bound = -0.25,
+                          upper_equivalence_bound = 0.25,
+                          alpha = 0.05,
+                          type = type) %>%
+      mutate(name = demo_var,
+             title = paste0(str_to_sentence(age_group),
+                            " respondents"))
+  })
+            
+ggplot(equivalence_tests, aes(x = est_sd, y = name)) +
+  coord_cartesian(xlim = c(-0.36, 0.36)) +
+  scale_x_continuous(breaks = c(-0.36, -0.3, -0.25, -0.2, -0.1, 0,
+                                0.1, 0.2, 0.25, 0.3, 0.36)) +
+  labs(x = "Equivalence range (in std. dev.)", y = "") +
+  geom_vline(xintercept = c(-0.36, -0.25, 0.25, 0.36), 
+             linetype = 3, size = 0.5) +
+  geom_vline(xintercept = seq(-0.3, 0.3, 0.1),
+             linetype = 1, size = 0.5,
+             colour = "grey90") +
+  geom_vline(xintercept = 0, linetype = "dashed", size = 0.6) +
+  geom_segment(aes(x = lower_sd, xend = upper_sd, yend = name),
+               size = 4, color = "grey70") +
+  geom_point() +
+  facet_wrap(~title) +
+  theme_linedraw() +
+  theme(axis.title.y = element_blank(),
+        axis.text.x = element_text(angle = 90,
+                                   hjust = 1, vjust = 0.5),
+        legend.title = element_blank(),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        legend.position = "bottom",
+        legend.text = element_text(size = 7),
+        legend.key.width=unit(3,"line"),
+        text = element_text(family = "Roboto")) 
+
+
+ggsave("figs/equivalence_test.png", width = 7, height = 3)

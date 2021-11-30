@@ -14,10 +14,6 @@ age_diff_models <- readRDS("data_clean/age_diff_models.rds")
 
 # Clean up coefficient estimates df ----
 
-
-age_diff_models %>%
-  filter(grepl("youth", outcome_variable))
-
 age_diff_models <- age_diff_models %>%
   filter(country == "All") %>%
   filter(!(term %in% c("coarsened_age_35", "coarsened_age_40"))) %>%
@@ -112,6 +108,17 @@ plot10yr <- lapply(unique(age_diff_models$group), function(x) {
 }) %>%
   "names<-"(unique(age_diff_models$group))
 
+plot10yr$youth_outcomes <- plot10yr$youth_outcomes +
+  # Facet the question that was asked in all countries
+  # "Addressing *needs* of youth"
+  facet_grid(rows = vars(grepl("needs", outcome_variable)),
+             labeller = labeller(.rows = function(x) {
+               ifelse(x, "All\ncountries", "Mauritius only")
+             }),
+             scales = "free", space = "free") +
+  theme(strip.text.y = element_text(size = 8, margin = margin(l = 3),
+                                    vjust = 0, hjust = 0.5))
+
 ### Align x-axes of plots
 ## This constrains the plot rectangles to all be 
 ## the same size and makes it easier to compare 
@@ -123,6 +130,8 @@ plot10yr_align <- align_plots(plotlist = plot10yr,
                               axis = "tblr") %>%
   lapply(ggdraw) 
 
+
+
 map2(names(plot10yr_align), c(5, 8, 5, 3.5, 5), function(x, y) {
   save_plot(paste0("figs/", x, "10yr.png"),
             plot10yr_align[[x]],
@@ -131,6 +140,9 @@ map2(names(plot10yr_align), c(5, 8, 5, 3.5, 5), function(x, y) {
 })
   
     
+
+
+
 # 35 year age difference plots ----
 
 plot35yr <- lapply(unique(age_diff_models$group), function(x) {
@@ -159,6 +171,18 @@ plot35yr <- lapply(unique(age_diff_models$group), function(x) {
   return(plot)
 }) %>%
   "names<-"(unique(age_diff_models$group))
+
+
+plot35yr$youth_outcomes <- plot35yr$youth_outcomes +
+  # Facet the question that was asked in all countries
+  # "Addressing *needs* of youth"
+  facet_grid(rows = vars(grepl("needs", outcome_variable)),
+             labeller = labeller(.rows = function(x) {
+               ifelse(x, "All\ncountries", "Mauritius only")
+             }),
+             scales = "free", space = "free") +
+  theme(strip.text.y = element_text(size = 8, margin = margin(l = 3),
+                                    vjust = 0, hjust = 0.5))
 
 plot35yr_align <- align_plots(plotlist = plot35yr, 
                               align = "hv",
@@ -202,6 +226,17 @@ plot40yr <- lapply(unique(age_diff_models$group), function(x) {
   return(plot)
 }) %>%
   "names<-"(unique(age_diff_models$group))
+
+plot40yr$youth_outcomes <- plot40yr$youth_outcomes +
+  # Facet the question that was asked in all countries
+  # "Addressing *needs* of youth"
+  facet_grid(rows = vars(grepl("needs", outcome_variable)),
+             labeller = labeller(.rows = function(x) {
+               ifelse(x, "All\ncountries", "Mauritius only")
+             }),
+             scales = "free", space = "free") +
+  theme(strip.text.y = element_text(size = 8, margin = margin(l = 3),
+                                    vjust = 0, hjust = 0.5))
 
 plot40yr_align <- align_plots(plotlist = plot40yr, 
                               align = "hv",
