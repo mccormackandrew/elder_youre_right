@@ -1,0 +1,137 @@
+---
+title: "Gottlieb Replication Figures"
+author: "Andrew McCormack"
+header-includes:
+  - \usepackage{fontspec}
+  - \usepackage{graphicx}
+  - \setmainfont[BoldFont = CormorantGaramond-Bold.otf,ItalicFont = CormorantGaramond-RegularItalic.otf]{CormorantGaramond-Regular.otf}
+output: 
+  pdf_document:
+    latex_engine: xelatex
+    dev: cairo_pdf
+    fig_caption: yes
+    keep_tex: yes
+fontsize: 11pt
+---
+
+
+
+
+```{r include = FALSE, message = FALSE, warning=FALSE, comment = FALSE}
+library(tidyverse)
+library(haven)
+library(survey)
+library(readr)
+
+# Gottelieb data
+# ggr <- read_stata("~/Desktop/caucasus_interviewer_age_effect/gottlieb_et_al_replication/dataverse_files/GGR_FinalData.dta",
+#                   encoding = 'latin1')
+
+parm_est_no_age <- read_stata("~/Desktop/caucasus_interviewer_age_effect/gottlieb_et_al_replication/dataverse_files/parm_est/parm_est1_no_age.dta")
+parm_est_age <- read_stata("~/Desktop/caucasus_interviewer_age_effect/gottlieb_et_al_replication/dataverse_files/parm_est/parm_est1_age.dta")
+pp_age <- read_stata("~/Desktop/caucasus_interviewer_age_effect/gottlieb_et_al_replication/dataverse_files/pp_age.dta")
+pp_no_age <- read_stata("~/Desktop/caucasus_interviewer_age_effect/gottlieb_et_al_replication/dataverse_files/pp_no_age.dta")
+
+```
+
+
+## Background
+
+Broadly speaking, the authors hypothesize that female empowerment (financial independence and social vulnerability) will affect the extent to which men and women differ in the type of policies they prioritize. They expect that as financial independence (economic empowerment) increases, women will be more likely to prioritize issues of infrastructure (because infrastructure will be viewed as more valuable to the employmed and those who anticipate future employment), bringing their views closer in line with men. On the other hand, higher social vulnerability will lead women to prioritize issues related to water (because fetching water is more likely to be a woman's role in more traditional divisions of labour), which will cause their prioritization in this area to diverge with men. Lastly, the authors expect that the gap between men and women in the prioritization of poverty (but not necessarily the *levels*) will remain constant across all levels of female empowerment. 
+
+
+## Impact of gender on policy prioritization
+
+Before looking specifically at how female empowerment affects the prioritization of infrastructure, water, and poverty, the authors examine gender gaps across a broader variety of categories. They measure policy prioritization with a question in the Afrobarometer that asks ``what are the most important problems that the government should address?'' This is an open-ended question where respondents list the three issues they think are most important. The authors code these answers into a smaller number of categories. They create dummy variables for each category, which take on a value of one if the respondent prioritized the given category in their top three. 
+
+I start with an exact replication of this analysis. Then, I incorporate age and age difference.\footnote{Interviewer younger is when the interviewer is 10 years or younger than the respondent. Interviewer older is when the interviewer is 10 years or older than the respondent.} The red lines in the figure below are the coefficient estimates from the original analysis. The black lines are the coefficient estimates after controlling for gender. The estimates don't change all that much. 
+
+```{r echo = FALSE, message = FALSE, warning=FALSE, comment = FALSE, fig.width=6, fig.height=4}
+parm_est_age$model <- rep("Age and age difference not controlled for", nrow(parm_est_age))
+parm_est_no_age$model <- rep("Age and age controlled for", nrow(parm_est_no_age))
+
+rbind(parm_est_age, parm_est_no_age) %>%
+  filter(parm == "female") %>%
+  mutate(eq = factor(eq, levels = c("Economy", "Poverty", "Infrastructure", "Health",
+                                    "Water", "Education", "Agriculture", "Violence", 
+                                    "Rights", "Services")),
+         eq = fct_rev(eq)) %>%
+  na.omit() %>%
+  ggplot(aes(eq, estimate, group = model, colour = model)) +
+  geom_point(position=position_dodge(width=0.4)) +
+  geom_errorbar(aes(ymin = min95, ymax = max95), 
+                width = 0.4,
+                position = position_dodge(width=0.4)) +
+  scale_y_continuous(breaks = seq(-0.04, 0.08, 0.02), limits = c(-0.04, 0.086)) +
+  geom_hline(yintercept = 0, linetype = "dashed") +
+  scale_colour_manual(values = c("black", "orangered2")) +
+  coord_flip() +
+  theme_light() +
+  theme(legend.position = "bottom",
+        legend.title = element_blank(),
+        axis.title.y = element_blank()) +
+  ylab("Impact of Gender (Female) on Likelihood of Policy Domain Prioritization \nSUR Pooled OLS Analysis with Country Fixed Effects, 95% CIs") +
+  ggtitle("Impact of gender (female) on policy domain prioritization (pooled analysis)")
+```
+
+\vspace{10pt}
+
+
+## Impact of age difference on policy prioritization
+
+Next, I plot the coefficients of the age difference dummy variables. There are a few instances where age difference has a statistically significant effect, but these effects are small. For instance, the results suggest that when respondents are interviewed by someone older than them, they are around 5% less likely to prioritize the economy, but 2% more likely to prioritize poverty.
+
+
+
+
+```{r echo = FALSE, message = FALSE, warning=FALSE, comment = FALSE, fig.width=6, fig.height=4}
+parm_est_age %>%
+  filter(parm %in% c("coarsened1", "coarsened2")) %>%
+  mutate(parm = case_when(parm == "coarsened1" ~ "Interviewer younger",
+                          parm == "coarsened2" ~ "Interviewer older")) %>%
+  mutate(eq = factor(eq, levels = c("Economy", "Poverty", "Infrastructure", "Health",
+                                    "Water", "Education", "Agriculture", "Violence", 
+                                    "Rights", "Services")),
+         eq = fct_rev(eq)) %>%
+  na.omit() %>%
+  ggplot(aes(eq, estimate, group = parm, colour = parm)) +
+  geom_point(position=position_dodge(width=0.4)) +
+  geom_errorbar(aes(ymin = min95, ymax = max95), 
+                width = 0.4,
+                position = position_dodge(width=0.4)) +
+  scale_y_continuous(breaks = seq(-0.08, 0.08, 0.02), limits = c(-0.08, 0.086)) +
+  geom_hline(yintercept = 0, linetype = "dashed") +
+  scale_colour_manual(values = c("black", "seagreen3")) +
+  coord_flip() +
+  theme_light() +
+  theme(legend.position = "bottom",
+        legend.title = element_blank(),
+        axis.title.y = element_blank()) +
+  ylab("Impact of Age Difference on Likelihood of Policy Domain Prioritization \nSUR Pooled OLS Analysis with Country Fixed Effects, 95% CIs")
+```
+
+
+```{r include = FALSE, eval = FALSE}
+pp_no_age
+pp_no_age %>%
+  mutate(var = factor(var, levels = c("Economy", "Poverty", "Infrastructure", "Health",
+                                    "Water", "Education", "Agriculture", "Violence", 
+                                    "Rights", "Services", "None")),
+         var = fct_rev(var),
+         female = fct_rev(factor(female))) %>%
+  na.omit() %>%
+  ggplot(aes(var, pp, group = female, colour = female)) +
+  geom_point(position=position_dodge(width=0.4)) +
+  geom_errorbar(aes(ymin = pp - pp_se*1.96, ymax = pp + pp_se*1.96), 
+                width = 0.4,
+                position = position_dodge(width=0.4)) +
+  scale_y_continuous(breaks = seq(0, 0.6, 0.1), limits = c(0, 0.6)) +
+  geom_hline(yintercept = 0, linetype = "dashed") +
+  scale_colour_manual(values = c("black", "seagreen3")) +
+  coord_flip() +
+  theme_light() +
+  theme(legend.position = "bottom",
+        legend.title = element_blank(),
+        axis.title.y = element_blank()) 
+```
+
