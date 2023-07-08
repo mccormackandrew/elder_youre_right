@@ -123,15 +123,18 @@ ggsave("figs/descriptives_age_coarsened_35_plot.png", width = 8, height = 2)
 
 # Figure XX: Descriptive plots of our four age group categories Round 7 and Mauritius ----
 
-coarsened_35_round_7 <- 
-  map_dfr(c("Mauritius", "All Round 7"), function(x) {
+# Mauritius is only in Round 7, so we can filter all the results to include only round 7
+stopifnot(setequal(7, unique(afpr$round[afpr$country == "Mauritius"])))
+
+coarsened_35_round_7 <- map_dfr(c("Mauritius", "All Round 7"), function(x) {
     
-    if(x != "All Round 7") {
+    if(x == "Mauritius") {
       afpr <- afpr %>%
-        filter(country == x)
+        filter(country == "Mauritius")
     }
     
     afpr %>%
+      filter(round == 7) %>%
       count(coarsened_age_35) %>%
       na.omit() %>%
       mutate(percent = round((n/sum(n)*100), 2)) %>%
